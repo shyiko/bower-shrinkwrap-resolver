@@ -12,10 +12,18 @@ var log = debuglog('bower-shrinkwrap-resolver');
 
 var argv = process.argv;
 
+var rc = {}
+try {
+  rc = JSON.parse(fs.readFileSync(path.join(process.cwd(), '.bowerrc'),
+    'utf8'))['bower-shrinkwrap-resolver'];
+} catch (e) {
+  log('WARN: ' + e.message);
+}
+
+var generateShrinkwrap = !!~argv.indexOf('--shrinkwrap') ||
+  (rc['shrinkwrap'] != null ? !!rc['shrinkwrap'] : true);
 var resetShrinkwrap = !!~argv.indexOf('--reset-shrinkwrap');
 var noShrinkwrap = !!~argv.indexOf('--no-shrinkwrap');
-var strictShrinkwrap = !!~argv.indexOf('--strict-shrinkwrap');
-var allowShrinkwrap = true;
 var endpointProvided = ['install', 'i', 'uninstall', 'rm', 'unlink', 'update']
   .some(function (c) {
     var index = argv.indexOf(c);
@@ -24,6 +32,8 @@ var endpointProvided = ['install', 'i', 'uninstall', 'rm', 'unlink', 'update']
       return endpoint && endpoint.indexOf('-');
     }
   });
+var strictShrinkwrap = !!~argv.indexOf('--strict-shrinkwrap') ||
+  (!!rc['strict-shrinkwrap'] && !resetShrinkwrap && !endpointProvided);
 
 var shrinkwrapFile = path.join(process.cwd(), 'bower-shrinkwrap.json');
 
@@ -40,27 +50,14 @@ if (!noShrinkwrap && !resetShrinkwrap) {
   }
 }
 
-if (!strictShrinkwrap) {
-  try {
-    var rc = JSON.parse(fs.readFileSync(path.join(process.cwd(), '.bowerrc'),
-      'utf8'))['bower-shrinkwrap-resolver'];
-    strictShrinkwrap = rc && rc['strict-shrinkwrap'];
-  } catch (e) {
-    log('WARN: ' + e.message);
-  }
-  strictShrinkwrap = strictShrinkwrap && !resetShrinkwrap && !endpointProvided;
-}
-
 log('INFO: strict mode is ' + (strictShrinkwrap ? 'ON' : 'OFF'));
 
 var updatedShrinkwrap = JSON.parse(JSON.stringify(shrinkwrap));
 
 var releaseCache = {};
 
-allowShrinkwrap = checkAllowShrinkwrapOverride(allowShrinkwrap);
-
 process.on('exit', function (status) {
-  if (!status && !noShrinkwrap && !strictShrinkwrap && allowShrinkwrap) {
+  if (!status && !noShrinkwrap && !strictShrinkwrap && generateShrinkwrap) {
     log('INFO: Updating ' + shrinkwrapFile);
     fs.writeFileSync(shrinkwrapFile, stringify(updatedShrinkwrap,
       {space: '  '}), 'utf8');
@@ -77,21 +74,6 @@ function logRelease(source) {
 function logFetch(endpoint, qualifier) {
   log('INFO: Fetching ' + endpoint.source + '#' + endpoint.target +
     (qualifier ? ' (' + qualifier + ')' : ''));
-}
-
-/*
- * Checks bower config to determine if 'allow-shrinkwrap' option is overriden.
- * Allows for setting shrinkwrap off by default, and having an automation task to enable as needed.
- */
-function checkAllowShrinkwrapOverride(allowShrinkwrap) {
-    var rc = JSON.parse(fs.readFileSync(path.join(process.cwd(), '.bowerrc'),
-      'utf8'))['bower-shrinkwrap-resolver'];
-
-    if (rc['allow-shrinkwrap'] === false) {
-        allowShrinkwrap = false
-    } 
-
-    return allowShrinkwrap;
 }
 
 module.exports = function resolver(bower) {
