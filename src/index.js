@@ -12,7 +12,7 @@ var log = debuglog('bower-shrinkwrap-resolver');
 
 var argv = process.argv;
 
-var rc = {}
+var rc = {};
 try {
   rc = JSON.parse(fs.readFileSync(path.join(process.cwd(), '.bowerrc'),
     'utf8'))['bower-shrinkwrap-resolver'];
