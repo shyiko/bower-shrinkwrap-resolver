@@ -15,6 +15,7 @@ var argv = process.argv;
 var resetShrinkwrap = !!~argv.indexOf('--reset-shrinkwrap');
 var noShrinkwrap = !!~argv.indexOf('--no-shrinkwrap');
 var strictShrinkwrap = !!~argv.indexOf('--strict-shrinkwrap');
+var allowShrinkwrap = true;
 var endpointProvided = ['install', 'i', 'uninstall', 'rm', 'unlink', 'update']
   .some(function (c) {
     var index = argv.indexOf(c);
@@ -56,8 +57,10 @@ var updatedShrinkwrap = JSON.parse(JSON.stringify(shrinkwrap));
 
 var releaseCache = {};
 
+allowShrinkwrap = checkAllowShrinkwrapOverride(allowShrinkwrap);
+
 process.on('exit', function (status) {
-  if (!status && !noShrinkwrap && !strictShrinkwrap) {
+  if (!status && !noShrinkwrap && !strictShrinkwrap && allowShrinkwrap) {
     log('INFO: Updating ' + shrinkwrapFile);
     fs.writeFileSync(shrinkwrapFile, stringify(updatedShrinkwrap,
       {space: '  '}), 'utf8');
@@ -74,6 +77,21 @@ function logRelease(source) {
 function logFetch(endpoint, qualifier) {
   log('INFO: Fetching ' + endpoint.source + '#' + endpoint.target +
     (qualifier ? ' (' + qualifier + ')' : ''));
+}
+
+/*
+ * Checks bower config to determine if 'allow-shrinkwrap' option is overriden.
+ * Allows for setting shrinkwrap off by default, and having an automation task to enable as needed.
+ */
+function checkAllowShrinkwrapOverride(allowShrinkwrap) {
+    var rc = JSON.parse(fs.readFileSync(path.join(process.cwd(), '.bowerrc'),
+      'utf8'))['bower-shrinkwrap-resolver'];
+
+    if (rc['allow-shrinkwrap'] === false) {
+        allowShrinkwrap = false
+    } 
+
+    return allowShrinkwrap;
 }
 
 module.exports = function resolver(bower) {
