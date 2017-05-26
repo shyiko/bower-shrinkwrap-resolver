@@ -33,6 +33,23 @@ That's it.
 
 > Debug logging can be turned with `NODE_DEBUG=bower-shrinkwrap-resolver bower ...`.
 
+## Configuration
+
+You can turn off shrinkwrap generation by default by changing your `.bowerrc` to
+```json 
+{
+  "resolvers": [
+    "bower-shrinkwrap-resolver"
+  ],
+  "bower-shrinkwrap-resolver": {
+    "shrinkwrap": false
+  }
+}
+```
+Adding `--shrinkwrap` after `bower install` will force shrinkwrap generation.  
+
+You can also set the value of `strict-shrinkwrap` (`false` by default).
+
 ## License
 
 [MIT License](https://github.com/shyiko/bower-shrinkwrap-resolver/blob/master/mit.license)
