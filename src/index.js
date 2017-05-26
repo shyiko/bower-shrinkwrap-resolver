@@ -15,7 +15,7 @@ var argv = process.argv;
 var rc = {};
 try {
   rc = JSON.parse(fs.readFileSync(path.join(process.cwd(), '.bowerrc'),
-    'utf8'))['bower-shrinkwrap-resolver'];
+    'utf8'))['bower-shrinkwrap-resolver'] || {};
 } catch (e) {
   log('WARN: ' + e.message);
 }
